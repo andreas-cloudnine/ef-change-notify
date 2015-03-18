@@ -10,8 +10,8 @@ namespace EFChangeNotify
 {
     internal static class EntityChangeNotifier
     {
-        private static List<string> _connectionStrings;
-        private static object _lockObj = new object();
+        private static readonly List<string> _connectionStrings;
+        private static readonly object _lockObj = new object();
 
         static EntityChangeNotifier()
         {
@@ -26,7 +26,9 @@ namespace EFChangeNotify
 
         internal static void AddConnectionString(string cs)
         {
+            // ReSharper disable InconsistentlySynchronizedField
             if (!_connectionStrings.Contains(cs))
+            // ReSharper restore InconsistentlySynchronizedField
             {
                 lock (_lockObj)
                 {
@@ -46,8 +48,8 @@ namespace EFChangeNotify
         where TEntity : class
     {
         private DbContext _context;
-        private Expression<Func<TEntity, bool>> _query;
-        private string _connectionString;
+        private readonly Expression<Func<TEntity, bool>> _query;
+        private readonly string _connectionString;
 
         public event EventHandler<EntityChangeEventArgs<TEntity>> Changed;
         public event EventHandler<NotifierErrorEventArgs> Error;
@@ -75,17 +77,15 @@ namespace EFChangeNotify
                     connection.Open();
 
                     var sqlDependency = new SqlDependency(command);
-                    sqlDependency.OnChange += new OnChangeEventHandler(_sqlDependency_OnChange);
+                    sqlDependency.OnChange += _sqlDependency_OnChange;
 
                     // NOTE: You have to execute the command, or the notification will never fire.
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                    }
+                    using (command.ExecuteReader()) { }
                 }
             }
         }
 
-        private string GetSql()
+        public string GetSql()
         {
             var q = GetCurrent();
 
