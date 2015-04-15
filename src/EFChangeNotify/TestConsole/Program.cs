@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using EFChangeNotify;
 using TestConsole.Models;
-using System.Data.Entity.Infrastructure;
-using System.Threading;
 
 namespace TestConsole
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            string productName = "Lamp";
+            const string productName = "Lamp";
 
-            using (var cache = new EntityCache<Product, StoreDbContext>(p => p.Name == "Lamp"))
+            using (var cache = new EntityCache<Product, StoreDbContext>(p => p.Name == productName, null, new StoreDbContext()))
             {
                 Console.WriteLine("Press any key to stop listening for changes...");
 
@@ -27,9 +26,7 @@ namespace TestConsole
                 }
             }
 
-            return;
-
-            using (var notifer = new EntityChangeNotifier<Product, StoreDbContext>(p => p.Name == productName))
+            using (var notifer = new EntityChangeNotifier<Product, StoreDbContext>(p => p.Name == productName, new StoreDbContext()))
             {
                 notifer.Error += (sender, e) =>
                 {
@@ -45,7 +42,7 @@ namespace TestConsole
                     }
                 };
 
-                using (var otherNotifier = new EntityChangeNotifier<Product, StoreDbContext>(x => x.Name == "Desk"))
+                using (var otherNotifier = new EntityChangeNotifier<Product, StoreDbContext>(x => x.Name == "Desk", new StoreDbContext()))
                 {
                     otherNotifier.Changed += (sender, e) =>
                     {

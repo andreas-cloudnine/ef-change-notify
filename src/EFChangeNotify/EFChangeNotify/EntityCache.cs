@@ -9,18 +9,20 @@ namespace EFChangeNotify
 {
     public class EntityCache<TEntity, TDbContext>
         : IDisposable
-        where TDbContext : DbContext, new()
+        where TDbContext : DbContext
         where TEntity : class
     {
-        private DbContext _context;
-        private Expression<Func<TEntity, bool>> _query;
+        private TDbContext _context;
+        private readonly Expression<Func<TEntity, bool>> _query;
+        private readonly IEntityCacheLogger _entityCacheLogger;
 
-        private string _cacheKey = Guid.NewGuid().ToString();
+        private readonly string _cacheKey = Guid.NewGuid().ToString();
 
-        public EntityCache(Expression<Func<TEntity, bool>> query)
+        public EntityCache(Expression<Func<TEntity, bool>> query, IEntityCacheLogger entityCacheLogger, TDbContext context)
         {
-            _context = new TDbContext();
+            _context = context;
             _query = query;
+            _entityCacheLogger = entityCacheLogger;
         }
 
         private IEnumerable<TEntity> GetCurrent()
@@ -38,7 +40,7 @@ namespace EFChangeNotify
             {
                 value = GetCurrent().ToList();
 
-                var changeMonitor = new EntityChangeMonitor<TEntity, TDbContext>(_query);
+                var changeMonitor = new EntityChangeMonitor<TEntity, TDbContext>(_query, _context);
 
                 CacheItemPolicy policy = new CacheItemPolicy();
 
@@ -46,11 +48,13 @@ namespace EFChangeNotify
 
                 MemoryCache.Default.Add(_cacheKey, value, policy);
 
-                Console.WriteLine("From Database...");
+                if (_entityCacheLogger != null)
+                    _entityCacheLogger.Log(string.Format("Using database to get {0}", _cacheKey));
             }
             else
             {
-                Console.WriteLine("From Cache...");
+                if (_entityCacheLogger != null)
+                    _entityCacheLogger.Log(string.Format("Using cache to get {0}", _cacheKey));
             }
 
             return value;

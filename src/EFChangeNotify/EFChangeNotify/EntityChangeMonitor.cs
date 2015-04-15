@@ -6,17 +6,17 @@ using System.Runtime.Caching;
 namespace EFChangeNotify
 {
     public class EntityChangeMonitor<TEntity, TDbContext> : ChangeMonitor
-        where TDbContext : DbContext, new()
+        where TDbContext : DbContext
         where TEntity : class
     {
         private EntityChangeNotifier<TEntity, TDbContext> _changeNotifier;
 
         private readonly string _uniqueId;
 
-        public EntityChangeMonitor(Expression<Func<TEntity, bool>> query)
+        public EntityChangeMonitor(Expression<Func<TEntity, bool>> query, TDbContext context)
         {       
             _uniqueId = Guid.NewGuid().ToString();
-            _changeNotifier = new EntityChangeNotifier<TEntity, TDbContext>(query);
+            _changeNotifier = new EntityChangeNotifier<TEntity, TDbContext>(query, context);
 
             _changeNotifier.Error += _changeNotifier_Error;
             _changeNotifier.Changed += _changeNotifier_Changed;

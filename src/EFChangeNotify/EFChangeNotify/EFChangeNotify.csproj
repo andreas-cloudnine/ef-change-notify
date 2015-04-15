@@ -57,6 +57,7 @@
     <Compile Include="EntityChangeMonitor.cs" />
     <Compile Include="EntityChangeNotifier.cs" />
     <Compile Include="EntityChangeEventArgs.cs" />
+    <Compile Include="IEntityCacheLogger.cs" />
     <Compile Include="NotifierErrorEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

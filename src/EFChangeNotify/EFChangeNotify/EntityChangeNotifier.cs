@@ -44,7 +44,7 @@ namespace EFChangeNotify
 
     public class EntityChangeNotifier<TEntity, TDbContext>
         : IDisposable
-        where TDbContext : DbContext, new()
+        where TDbContext : DbContext
         where TEntity : class
     {
         private DbContext _context;
@@ -54,11 +54,16 @@ namespace EFChangeNotify
         public event EventHandler<EntityChangeEventArgs<TEntity>> Changed;
         public event EventHandler<NotifierErrorEventArgs> Error;
 
-        public EntityChangeNotifier(Expression<Func<TEntity, bool>> query)
+        public EntityChangeNotifier(Expression<Func<TEntity, bool>> query, TDbContext context)
         {
-            _context = new TDbContext();
+            _context = context;
             _query = query;
-            _connectionString = _context.Database.Connection.ConnectionString;
+
+            if (!string.IsNullOrWhiteSpace(_context.Database.Connection.ConnectionString))
+                _connectionString = _context.Database.Connection.ConnectionString;
+
+            if(string.IsNullOrWhiteSpace(_connectionString))
+                throw new Exception("No connectionString provided!");
 
             EntityChangeNotifier.AddConnectionString(_connectionString);
 
@@ -67,11 +72,9 @@ namespace EFChangeNotify
 
         private void RegisterNotification()
         {
-            _context = new TDbContext();
-
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (var connection = new SqlConnection(_connectionString))
             {
-                using (SqlCommand command = GetCommand())
+                using (var command = GetCommand())
                 {
                     command.Connection = connection;
                     connection.Open();
